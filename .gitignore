@@ -1,0 +1,13 @@
+# ignored in project dir
+.vscode/
+build/
+.xmake/
+test/
+.cache/
+
+# ignored files
+*.asm
+*.S
+*.s
+*.o
+*.out
