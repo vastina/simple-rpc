@@ -1,14 +1,20 @@
 #ifndef __BIND_H__
 #define __BIND_H__
 
+#include "serialize.hpp"
+
 #include <cstddef>
+#include <cstdio>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
+
+namespace vastina {
+
+// for more, see this, link : https://www.zhihu.com/question/636120604/answer/3345305152
 
 template<typename fn, typename... Args>
 struct func_traits;
@@ -57,38 +63,45 @@ public:
   CallTable() noexcept {}
 
 public:
+  
+  constexpr static auto donothing { []( char*, void*) { }} ; //todo default trans
   template<typename fn>
-  void bind( const std::string id, fn func )
+  void bind( const std::string id, fn func ,
+  const std::function<void(char*, void*)> req_tansf  = donothing,
+  const std::function<void(char*, void*)> resp_tansf = donothing)
   {
-    if ( handlers.contains( id ) ) { // for contains, use -std=c++20 or higher standard
+// this is useless because I need c++20 at other places
+//#if  __cplusplus >= 202002L
+    if ( handlers.contains( id ) ) {
+// #else
+//     if ( handlers.count(id) == 1 )
+// #endif
       // do something
     }
     using ret_type = typename func_traits<fn>::return_type;
     using arg_type = typename func_traits<fn>::args_type;
-    handlers.insert( std::make_pair( id, [func]( char* requst, char* response ) {
+    handlers.insert( std::make_pair( id, [func, &req_tansf, &resp_tansf]( char* requst, char* response ) {
       arg_type requst_args {};
-      ( []( char* requst_buf, arg_type& args ) {
-        // do deserialize here
-      } )( requst, requst_args );
+      req_tansf(requst, &requst_args);// do deserialize here
 
       ret_type result = call( func, requst_args );
-      // clang-format off
-std::cout << result << '\n';
-      // clang-format on
-      ( []( char* response_buf, ret_type results ) {
-        // do serialize here
-      } )( response, result );
+      resp_tansf(response, &result);// do serialize here
     } ) );
   }
 
-  void exec( std::string id, char* requst, char* response )
+  void exec( std::string id, char* requst )
   {
     if ( !handlers.contains( id ) ) {
       // dosomething
       return;
     }
+  // clang-format off
+char response[BUFSIZ]; //todo tobe removed
+  // clang-format on
     return handlers.at( id )( requst, response );
   }
 };
+
+}; // namespace vastina
 
 #endif

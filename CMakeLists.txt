@@ -12,7 +12,7 @@ set(project_dir "./code")
 include_directories("${project_dir}/include")
 
 file(GLOB SOURCES "${project_dir}/${project_name}/*.cpp")
-add_library(code_objects OBJECT ${SOURCES})
+add_library(code_objects STATIC ${SOURCES})
 
 add_executable(${project_name}.out ${project_dir}/main.cpp)
 target_link_libraries(${project_name}.out code_objects)

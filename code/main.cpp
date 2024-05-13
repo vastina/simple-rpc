@@ -1,5 +1,9 @@
-#include "bind.hpp"
+// the main.cpp is just for test
 
+#include "bind.hpp"
+#include "serialize.hpp"
+
+#include <cstdio>
 #include <iostream>
 #include <tuple>
 
@@ -9,9 +13,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int abc( float, double )
+int abc( float a, double b )
 {
-  return {};
+  return (int)a + (int)b;
 }
 auto lambda { [] {} };
 auto lambdap { +[] { return .1f; } };
@@ -23,6 +27,7 @@ struct aaa
 };
 
 using std::cout;
+using namespace vastina;
 
 template<typename... Args>
 decltype(auto) index_sequence(std::tuple<Args...>& args){
@@ -34,10 +39,12 @@ void print_tuple(ty& args){
   if constexpr(Nm > 0){
     print_tuple<Nm - 1, ty>(args);
   } else {
-    return (void)(cout << std::get<0>(args) << '\n');
+    return (void)(cout << std::hex << std::get<0>(args) << '\n');
   }
   cout << std::get<Nm>(args) << '\n';
 }
+
+
 
 int main()
 {
@@ -82,14 +89,13 @@ std::cout << "------------------------------------------------------------------
   {
     constexpr auto helper { [] { ::system( "rm -f tmp.out" ); } };
 
-    constexpr auto printer_aa {
-      []( const aaa_aa::args_type& args ) { cout << std::hex << std::get<0>( args ) << '\n'; } };
     helper();
     constexpr aaa_aa::args_type args { std::make_tuple( 0x12345678 ) };
-    printer_aa( args );
+    const auto isq { details::index_sequence(args) };
+    print_tuple<isq.size()-1>(args);
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
-      auto length = write( fd, (void*)&args, sizeof( args ) );
+      write( fd, (void*)&args, sizeof( args ) );
       ::close( fd );
     }
     aaa_aa::args_type args2 {};
@@ -100,19 +106,16 @@ std::cout << "------------------------------------------------------------------
       std::memcpy( (void*)&args2, (void*)buf, length );
       ::close( fd );
     }
-    printer_aa( args2 );
+    const auto isq2 { details::index_sequence(args2) };
+    print_tuple<isq2.size()-1>(args2);
 
-    constexpr auto printer_in { []( const in_bracket::args_type& args ) {
-      cout << std::hex << std::get<0>( args ) << '\n';
-      cout << std::hex << std::get<1>( args ) << '\n';
-      cout << std::hex << std::get<2>( args ) << '\n';
-    } };
     helper();
     constexpr in_bracket::args_type args3 { std::make_tuple( 0x1234567812345678, 'x', 3.14 ) };
-    printer_in( args3 );
+    const auto isq3 { details::index_sequence(args3) };
+    print_tuple<isq3.size()-1>(args3);
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
-      auto length = write( fd, (void*)&args3, sizeof( args3 ) );
+      write( fd, (void*)&args3, sizeof( args3 ) );
       ::close( fd );
     }
     in_bracket::args_type args4 {};
@@ -123,19 +126,51 @@ std::cout << "------------------------------------------------------------------
       std::memcpy( (void*)&args4, (void*)buf, length );
       ::close( fd );
     }
-    printer_in( args4 );
+    const auto isq4 { details::index_sequence(args4) };
+    print_tuple<isq4.size()-1>(args4);
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";
   // clang-format on
+
   CallTable ct {};
-  char donothing {};
-  ct.bind( "abc", &abc );
-  ct.exec( "abc", &donothing, &donothing );
-  // ct.bind("nothing", []{ return ; }); //void is unacceptable here
-  // ct.exec("nothing", &donothing, &donothing);
-  ct.bind( "nothing", [] { return 3.14f; } );
-  ct.exec( "nothing", &donothing, &donothing );
+
+  ct.bind( "abc", &abc ,
+  []( char* reqs, void* args ) {
+    details::single_cpy<func_abc::args_type>(args, reqs); },
+  []( char* resp, void* result ) {
+    details::single_cpy<func_abc::return_type>(resp, result);
+    
+    // Pretend to be communicating here......
+    int fd = ::open("sent.out", O_CREAT | O_WRONLY, 0644);
+    ::write(fd, resp, strlen(resp));
+    ::close(fd); }
+  );
+
+  char requst[sizeof(func_abc::args_type)+1] {};
+  func_abc::args_type args { std::make_tuple(3.14f, 11.4514) };
+  details::single_cpy<func_abc::args_type>(requst, (void*)&args);
+  
+  ct.exec( "abc", requst);
+
+  char resp[BUFSIZ];
+  bzero(resp, BUFSIZ);
+  int fd = ::open("sent.out", O_RDONLY);
+  read(fd, resp, BUFSIZ);
+  ::close(fd);
+
+  func_abc::return_type res {};
+  details::single_cpy<func_abc::return_type>(&res, resp);
+
+  cout << res <<'\n';
+
+// client : deserialize--->result   args -----serialize------> requst buffer
+//           /\                                                 |
+//            |                                                 |
+//            |                                                 |
+//            |                                                 | 
+//            |                                                 \/
+// server :response<---serialize---result<----exec---args<---deserialize
 
   return 0;
 }
