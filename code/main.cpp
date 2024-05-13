@@ -139,28 +139,23 @@ std::cout << "------------------------------------------------------------------
   []( char* reqs, void* args ) {
     details::single_cpy<func_abc::args_type>(args, reqs); },
   []( char* resp, void* result ) {
-    details::single_cpy<func_abc::return_type>(resp, result);
-    
-    // Pretend to be communicating here......
-    int fd = ::open("sent.out", O_CREAT | O_WRONLY, 0644);
-    ::write(fd, resp, strlen(resp));
-    ::close(fd); }
+    details::single_cpy<func_abc::return_type>(resp, result); }
   );
 
-  char requst[sizeof(func_abc::args_type)+1] {};
+  //char requst[sizeof(func_abc::args_type)+1] {};
   func_abc::args_type args { std::make_tuple(3.14f, 11.4514) };
-  details::single_cpy<func_abc::args_type>(requst, (void*)&args);
+  //details::single_cpy<func_abc::args_type>(requst, (void*)&args);
   
-  ct.exec( "abc", requst);
-
-  char resp[BUFSIZ];
-  bzero(resp, BUFSIZ);
-  int fd = ::open("sent.out", O_RDONLY);
-  read(fd, resp, BUFSIZ);
+  char response[sizeof(func_abc::return_type)+1];
+  ct.exec( "abc", (char*)&args, response );
+  // Pretend to be communicating here... requst above should be read from socket too...
+  int fd = ::open("sent.out", O_CREAT | O_WRONLY, 0644);
+  ::write(fd, response, strlen(response));
   ::close(fd);
 
+  int fdc = ::open("sent.out", O_RDONLY);
   func_abc::return_type res {};
-  details::single_cpy<func_abc::return_type>(&res, resp);
+  ::read(fdc, &res, sizeof(res));
 
   cout << res <<'\n';
 

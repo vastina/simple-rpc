@@ -22,7 +22,7 @@ template<typename fn, typename... Args>
 struct func_traits<fn ( * )( Args... )>
 {
   using return_type = fn;
-  using args_type = std::tuple<Args...>;//std::tuple<typename std::decay<Args>::type...>;
+  using args_type = std::tuple<typename std::decay<Args>::type...>;//std::tuple<Args...>;
   static void print_type()
   {
     std::cout << typeid( return_type ).name() << '\n';
@@ -33,6 +33,8 @@ struct func_traits<fn ( * )( Args... )>
 template<typename ty>
 struct func_traits<ty> : func_traits<decltype( &ty::operator() )>
 {};
+
+
 
 template<typename cls, typename fn, typename... Args>
 struct func_traits<fn ( cls::* )( Args... )> : func_traits<fn ( * )( Args... )>
@@ -70,17 +72,12 @@ public:
   const std::function<void(char*, void*)> req_tansf  = donothing,
   const std::function<void(char*, void*)> resp_tansf = donothing)
   {
-// this is useless because I need c++20 at other places
-//#if  __cplusplus >= 202002L
-    if ( handlers.contains( id ) ) {
-// #else
-//     if ( handlers.count(id) == 1 )
-// #endif
+    if ( handlers.contains( id ) ) { // use -std=c++20 or higher standard
       // do something
     }
     using ret_type = typename func_traits<fn>::return_type;
     using arg_type = typename func_traits<fn>::args_type;
-    handlers.insert( std::make_pair( id, [func, &req_tansf, &resp_tansf]( char* requst, char* response ) {
+    handlers.insert( std::make_pair( id, [func, req_tansf, resp_tansf]( char* requst, char* response ) {
       arg_type requst_args {};
       req_tansf(requst, &requst_args);// do deserialize here
 
@@ -89,15 +86,12 @@ public:
     } ) );
   }
 
-  void exec( std::string id, char* requst )
+  void exec( std::string id, char* requst, char* response)
   {
     if ( !handlers.contains( id ) ) {
       // dosomething
       return;
     }
-  // clang-format off
-char response[BUFSIZ]; //todo tobe removed
-  // clang-format on
     return handlers.at( id )( requst, response );
   }
 };
