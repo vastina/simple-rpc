@@ -1,5 +1,7 @@
 #include "public.hpp"
 #include "tools.hpp"
+#include <cstdlib>
+#include <ctime>
 #include <random>
 
 namespace pub {
@@ -11,10 +13,13 @@ bool inCircle(const Circle &c, const Point &p){
 
 Sth return_sth(const Circle &c, const Point &p){
   Sth s {};
-  auto rd {std::default_random_engine()};
-  s.x = p.x + rd() % 100;
-  s.y = p.y + rd() % 100;
-  s.flag = inCircle(c, p) && (rd() % 3 != 0);
+  std::srand(std::time(nullptr));
+  // auto rd {std::default_random_engine()};
+  // s.x = p.x + rd() % 100;
+  // s.y = p.y + rd() % 100;
+  s.x = p.x + std::rand() % 10000;
+  s.y = p.y + std::rand() % 10000;
+  s.flag = inCircle(c, p) && (std::rand() % 3 != 0);
   return s;
 }
 
