@@ -10,14 +10,14 @@
 #include <cassert>
 #include <cstring>
 
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 int abc( float a, double b )
 {
   return (int)a + (int)b;
 }
-auto lambda { [] {} };
+constexpr auto lambda { [] {} };
 auto lambdap { +[] { return .1f; } };
 struct aaa
 {
@@ -30,21 +30,21 @@ using std::cout;
 using namespace vastina;
 
 template<typename... Args>
-decltype(auto) index_sequence(std::tuple<Args...>& args){
+decltype( auto ) index_sequence( const std::tuple<Args...>& )
+{
   return std::index_sequence_for<Args...> {};
 };
 template<const std::size_t Nm, typename ty>
 // ty need a concept here
-void print_tuple(ty& args){
-  if constexpr(Nm > 0){
-    print_tuple<Nm - 1, ty>(args);
+void print_tuple( ty& args )
+{
+  if constexpr ( Nm > 0 ) {
+    print_tuple<Nm - 1, ty>( args );
   } else {
-    return (void)(cout << std::hex << std::get<0>(args) << '\n');
+    return (void)( cout << std::hex << std::get<0>( args ) << '\n' );
   }
-  cout << std::get<Nm>(args) << '\n';
+  cout << std::get<Nm>( args ) << '\n';
 }
-
-
 
 int main()
 {
@@ -68,20 +68,20 @@ int main()
 std::cout << "------------------------------------------------------------------------------------\n";
   // clang-format on
   {
-    func_abc::args_type args{};
-    cout << ::call(&abc, args) <<'\n';
+    func_abc::args_type args {};
+    cout << ::call( &abc, args ) << '\n';
 
     // no arg is OK
-    func_lambdap::args_type args2{};
-    cout << ::call(lambdap, args2) <<'\n';
+    func_lambdap::args_type args2 {};
+    cout << ::call( lambdap, args2 ) << '\n';
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";
   // clang-format on
   {
-    in_bracket::args_type args{ std::make_tuple(0x1234567812345678, 'v', 1919810.114514) };
-    const auto isq { index_sequence(args) };
-    print_tuple<isq.size()-1>(args);
+    in_bracket::args_type args { std::make_tuple( 0x1234567812345678, 'v', 1919810.114514 ) };
+    const auto isq { index_sequence( args ) };
+    print_tuple<isq.size() - 1>( args );
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";
@@ -91,8 +91,8 @@ std::cout << "------------------------------------------------------------------
 
     helper();
     constexpr aaa_aa::args_type args { std::make_tuple( 0x12345678 ) };
-    const auto isq { details::index_sequence(args) };
-    print_tuple<isq.size()-1>(args);
+    const auto isq { details::index_sequence( args ) };
+    print_tuple<isq.size() - 1>( args );
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
       write( fd, (void*)&args, sizeof( args ) );
@@ -106,13 +106,13 @@ std::cout << "------------------------------------------------------------------
       std::memcpy( (void*)&args2, (void*)buf, length );
       ::close( fd );
     }
-    const auto isq2 { details::index_sequence(args2) };
-    print_tuple<isq2.size()-1>(args2);
+    const auto isq2 { details::index_sequence( args2 ) };
+    print_tuple<isq2.size() - 1>( args2 );
 
     helper();
     constexpr in_bracket::args_type args3 { std::make_tuple( 0x1234567812345678, 'x', 3.14 ) };
-    const auto isq3 { details::index_sequence(args3) };
-    print_tuple<isq3.size()-1>(args3);
+    const auto isq3 { details::index_sequence( args3 ) };
+    print_tuple<isq3.size() - 1>( args3 );
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
       write( fd, (void*)&args3, sizeof( args3 ) );
@@ -126,8 +126,8 @@ std::cout << "------------------------------------------------------------------
       std::memcpy( (void*)&args4, (void*)buf, length );
       ::close( fd );
     }
-    const auto isq4 { details::index_sequence(args4) };
-    print_tuple<isq4.size()-1>(args4);
+    const auto isq4 { details::index_sequence( args4 ) };
+    print_tuple<isq4.size() - 1>( args4 );
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";
@@ -135,37 +135,36 @@ std::cout << "------------------------------------------------------------------
 
   CallTable ct {};
 
-  ct.bind( "abc", &abc ,
-  []( char* reqs, void* args ) {
-    details::single_cpy<func_abc::args_type>(args, reqs); },
-  []( char* resp, void* result ) {
-    details::single_cpy<func_abc::return_type>(resp, result); }
-  );
+  ct.bind(
+    "abc",
+    &abc,
+    []( char* reqs, void* args ) { details::single_cpy<func_abc::args_type>( args, reqs ); },
+    []( char* resp, void* result ) { details::single_cpy<func_abc::return_type>( resp, result ); } );
 
-  //char requst[sizeof(func_abc::args_type)+1] {};
-  func_abc::args_type args { std::make_tuple(3.14f, 11.4514) };
-  //details::single_cpy<func_abc::args_type>(requst, (void*)&args);
-  
-  char response[sizeof(func_abc::return_type)+1];
+  // char requst[sizeof(func_abc::args_type)+1] {};
+  func_abc::args_type args { std::make_tuple( 3.14f, 11.4514 ) };
+  // details::single_cpy<func_abc::args_type>(requst, (void*)&args);
+
+  char response[sizeof( func_abc::return_type ) + 1];
   ct.exec( "abc", (char*)&args, response );
   // Pretend to be communicating here... requst above should be read from socket too...
-  int fd = ::open("sent.out", O_CREAT | O_WRONLY, 0644);
-  ::write(fd, response, strlen(response));
-  ::close(fd);
+  int fd = ::open( "sent.out", O_CREAT | O_WRONLY, 0644 );
+  ::write( fd, response, strlen( response ) );
+  ::close( fd );
 
-  int fdc = ::open("sent.out", O_RDONLY);
+  int fdc = ::open( "sent.out", O_RDONLY );
   func_abc::return_type res {};
-  ::read(fdc, &res, sizeof(res));
+  ::read( fdc, &res, sizeof( res ) );
 
-  cout << res <<'\n';
+  cout << res << '\n';
 
-// client : deserialize--->result   args -----serialize------> requst buffer
-//           /\                                                 |
-//            |                                                 |
-//            |                                                 |
-//            |                                                 | 
-//            |                                                 \/
-// server :response<---serialize---result<----exec---args<---deserialize
+  // client : deserialize--->result   args -----serialize------> requst buffer
+  //           /\                                                 |
+  //            |                                                 |
+  //            |                                                 |
+  //            |                                                 |
+  //            |                                                 \/
+  // server :response<---serialize---result<----exec---args<---deserialize
 
   return 0;
 }

@@ -1,8 +1,6 @@
 #ifndef __BIND_H__
 #define __BIND_H__
 
-#include "serialize.hpp"
-
 #include <cstddef>
 #include <cstdio>
 #include <functional>
@@ -22,7 +20,7 @@ template<typename fn, typename... Args>
 struct func_traits<fn ( * )( Args... )>
 {
   using return_type = fn;
-  using args_type = std::tuple<typename std::decay<Args>::type...>;//std::tuple<Args...>;
+  using args_type = std::tuple<typename std::decay<Args>::type...>; // std::tuple<Args...>;
   static void print_type()
   {
     std::cout << typeid( return_type ).name() << '\n';
@@ -33,8 +31,6 @@ struct func_traits<fn ( * )( Args... )>
 template<typename ty>
 struct func_traits<ty> : func_traits<decltype( &ty::operator() )>
 {};
-
-
 
 template<typename cls, typename fn, typename... Args>
 struct func_traits<fn ( cls::* )( Args... )> : func_traits<fn ( * )( Args... )>
@@ -65,12 +61,12 @@ public:
   CallTable() noexcept {}
 
 public:
-  
-  constexpr static auto donothing { []( char*, void*) { }} ; //todo default trans
+  constexpr static auto donothing { []( char*, void* ) {} }; // todo default trans
   template<typename fn>
-  void bind( const std::string id, fn func ,
-  const std::function<void(char*, void*)> req_tansf  = donothing,
-  const std::function<void(char*, void*)> resp_tansf = donothing)
+  void bind( const std::string& id,
+             fn func,
+             const std::function<void( char*, void* )> req_tansf = donothing,
+             const std::function<void( char*, void* )> resp_tansf = donothing )
   {
     if ( handlers.contains( id ) ) { // use -std=c++20 or higher standard
       // do something
@@ -79,14 +75,14 @@ public:
     using arg_type = typename func_traits<fn>::args_type;
     handlers.insert( std::make_pair( id, [func, req_tansf, resp_tansf]( char* requst, char* response ) {
       arg_type requst_args {};
-      req_tansf(requst, &requst_args);// do deserialize here
+      req_tansf( requst, &requst_args ); // do deserialize here
 
       ret_type result = call( func, requst_args );
-      resp_tansf(response, &result);// do serialize here
+      resp_tansf( response, &result ); // do serialize here
     } ) );
   }
 
-  void exec( std::string id, char* requst, char* response)
+  void exec( std::string id, char* requst, char* response )
   {
     if ( !handlers.contains( id ) ) {
       // dosomething

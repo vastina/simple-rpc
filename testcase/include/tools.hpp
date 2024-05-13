@@ -86,15 +86,15 @@ inline int CreateClientSocket( int domain, int type, int protocol, short PORT )
     errorhandling( "invalid socket: {}\n", errno );
     return INVALID_SOCKET;
   }
-    sockaddr_in addr {};
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = domain;
+  sockaddr_in addr {};
+  memset( &addr, 0, sizeof( addr ) );
+  addr.sin_family = domain;
   if ( -1 != PORT ) {
     addr.sin_port = htons( PORT );
   } else {
-    addr.sin_port = htons(INADDR_ANY) ;
+    addr.sin_port = htons( INADDR_ANY );
   }
-    addr.sin_addr.s_addr = inet_addr( localhost.data() );
+  addr.sin_addr.s_addr = inet_addr( localhost.data() );
   if ( bind( so, (struct sockaddr*)&addr, sizeof( addr ) ) == -1 ) {
     errorhandling( "connect fail with code: {}\n", errno );
     return INVALID_SOCKET;
@@ -103,15 +103,15 @@ inline int CreateClientSocket( int domain, int type, int protocol, short PORT )
   return so;
 }
 
-inline void Connect(int sock, int domain, short PORT)
+inline void Connect( int sock, int domain, short PORT )
 {
   struct sockaddr_in serveaddr;
-  memset(&serveaddr, 0, sizeof(serveaddr));
+  memset( &serveaddr, 0, sizeof( serveaddr ) );
   serveaddr.sin_family = domain;
-  serveaddr.sin_addr.s_addr = inet_addr(localhost.data());
-  serveaddr.sin_port = htons(PORT);
-  if(connect(sock, (struct sockaddr*)&serveaddr, sizeof(serveaddr)) == -1){
-    errorhandling("connect fail with code: {}\n", errno);
+  serveaddr.sin_addr.s_addr = inet_addr( localhost.data() );
+  serveaddr.sin_port = htons( PORT );
+  if ( connect( sock, (struct sockaddr*)&serveaddr, sizeof( serveaddr ) ) == -1 ) {
+    errorhandling( "connect fail with code: {}\n", errno );
   }
 }
 
