@@ -3,8 +3,12 @@
 #include "rpc.hpp"
 #include "serialize.hpp"
 #include "tools.hpp"
+#include <cassert>
+#include <cstdlib>
 #include <fcntl.h>
+#include <format>
 #include <random>
+#include <tuple>
 
 using namespace vastina;
 
@@ -35,23 +39,39 @@ int main(){
   Connect(clntsock, AF_INET, pub::server_port);
 
   int count = 0;
-  auto rd {std::default_random_engine()};
+  //auto rd {std::default_random_engine()};
   while(true){
-    using traits =  func_traits<decltype(&pub::return_sth)>;
+    // using traits =  func_traits<decltype(&pub::return_sth)>;
     
-    pub::requst_buf_t req {"return_sth"};
-    {
-      traits::args_type args {std::make_tuple(pub::Circle{{(i32)rd()%10, (i32)rd()%10}, 5}
-        , pub::Point{(i32)rd(), (i32)rd()})};
-      req.args_.resize(sizeof(traits::args_type));
-      details::single_cpy<traits::args_type>(req.args_.data(), &args);
-    }
+    // pub::requst_buf_t req {"return_sth"};
+    // {
+    //   traits::args_type args {std::make_tuple(pub::Circle{{(i32)rd()%10, (i32)rd()%10}, 5}
+    //     , pub::Point{(i32)rd(), (i32)rd()})};
+    //   req.args_.resize(sizeof(traits::args_type));
+    //   details::single_cpy<traits::args_type>(req.args_.data(), &args);
+    // }
     
-    req.WriteIn(clntsock);
+    // req.WriteIn(clntsock);
 
+    // traits::return_type res {};
+    // ::read(clntsock, &res, sizeof(traits::return_type));
+    // std::cout << res.x << " " << res.y << " " << res.flag << std::endl;
+
+    using traits = func_traits<decltype(&pub::addd)>;
+
+    pub::requst_buf_t req {"addd"};
+    std::srand(std::time(nullptr));
+    auto x{ std::rand() }; auto y {std::rand()};
+std::cout << std::format("calling addd({}, {})\n", x, y);
+    traits::args_type args {std::make_tuple(x, y)};
+    req.args_.resize(sizeof(traits::args_type));
+    details::single_cpy<traits::args_type>(req.args_.data(), &args);
+
+    req.WriteIn(clntsock);
     traits::return_type res {};
     ::read(clntsock, &res, sizeof(traits::return_type));
-    std::cout << res.x << " " << res.y << " " << res.flag << std::endl;
+std::cout << std::format("asserting({} == {}+{})\n", res, x, y);
+    assert(res == x+y);
 
     if(count++ >= 10) break;
   }

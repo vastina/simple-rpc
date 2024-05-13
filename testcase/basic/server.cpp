@@ -28,8 +28,16 @@ Sth return_sth(const Circle &c, const Point &p){
 int main(){
   vastina::CallTable ct{};
   
-  using traits =  vastina::func_traits<decltype(&pub::return_sth)>;
-  ct.bind(std::string("return_sth"), &pub::return_sth,
+  // using traits =  vastina::func_traits<decltype(&pub::return_sth)>;
+  // ct.bind(std::string("return_sth"), &pub::return_sth,
+  // []( char* reqs, void* args ) {
+  //   vastina::details::single_cpy<traits::args_type>(args, reqs); },
+  // []( char* resp, void* result ) {
+  //   vastina::details::single_cpy<traits::return_type>(resp, result); }
+  // );
+
+  using traits =  vastina::func_traits<decltype(&pub::addd)>;
+  ct.bind(std::string("addd"), &pub::addd,
   []( char* reqs, void* args ) {
     vastina::details::single_cpy<traits::args_type>(args, reqs); },
   []( char* resp, void* result ) {
