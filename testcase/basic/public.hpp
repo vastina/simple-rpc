@@ -91,10 +91,7 @@ typedef struct Sth
 
 Sth return_sth( const Circle& c, const Point& p );
 
-inline i32 addd( i32 a, i32 b )
-{
-  return a + b;
-}
+i32 addd( i32 a, i32 b );
 
 };
 

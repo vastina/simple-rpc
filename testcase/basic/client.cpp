@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <format>
 #include <random>
-#include <tuple>
 
 using namespace vastina;
 
@@ -41,19 +40,15 @@ int main()
   {
     int count = 0;
     while ( true ) {
-      using traits = func_traits<decltype( &pub::return_sth )>;
-      pub::requst_buf_t req { "return_sth" };
-      {
-        traits::args_type args { std::make_tuple( pub::Circle { { (i32)rd() % 10, (i32)rd() % 10 }, 5 },
-                                                  pub::Point { (i32)rd(), (i32)rd() } ) };
-        req.args_.resize( sizeof( traits::args_type ) );
-        details::single_cpy<traits::args_type>( req.args_.data(), &args );
-      }
 
+      pub::requst_buf_t req { "return_sth" ,details::make_args_binary(
+        pub::Circle { { (i32)rd() % 114, (i32)rd() % 514 }, 100 },
+        pub::Point { (i32)rd(), (i32)rd() }) 
+      };
       req.WriteIn( clntsock );
 
-      traits::return_type res {};
-      ::read( clntsock, &res, sizeof( traits::return_type ) );
+      func_traits<decltype( &pub::return_sth )>::return_type res {};
+      ::read( clntsock, &res, sizeof( res ) );
       std::cout << res.x << " " << res.y << " " << res.flag << std::endl;
 
       if ( count++ >= 10 )
@@ -64,20 +59,15 @@ int main()
   {
     int count = 0;
     while ( true ) {
-      using traits = func_traits<decltype( &pub::addd )>;
-
-      pub::requst_buf_t req { "addd" };
-      //    std::srand( std::time( nullptr ) );
       auto x { (i32)rd() % 114514 };
       auto y { (i32)rd() % 114514 };
-      std::cout << std::format( "calling addd({}, {})\n", x, y );
-      traits::args_type args { std::make_tuple( x, y ) };
-      req.args_.resize( sizeof( traits::args_type ) );
-      details::single_cpy<traits::args_type>( req.args_.data(), &args );
+      pub::requst_buf_t req { "addd", details::make_args_binary(x, y) };
 
+      std::cout << std::format( "calling addd({}, {})\n", x, y );
       req.WriteIn( clntsock );
-      traits::return_type res {};
-      ::read( clntsock, &res, sizeof( traits::return_type ) );
+
+      func_traits<decltype( &pub::addd )>::return_type res {};
+      ::read( clntsock, &res, sizeof( res ) );
       std::cout << std::format( "asserting({} == {}+{})\n", res, x, y );
       assert( res == x + y );
 

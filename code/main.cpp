@@ -34,17 +34,6 @@ decltype( auto ) index_sequence( const std::tuple<Args...>& )
 {
   return std::index_sequence_for<Args...> {};
 };
-template<const std::size_t Nm, typename ty>
-// ty need a concept here
-void print_tuple( ty& args )
-{
-  if constexpr ( Nm > 0 ) {
-    print_tuple<Nm - 1, ty>( args );
-  } else {
-    return (void)( cout << std::hex << std::get<0>( args ) << '\n' );
-  }
-  cout << std::get<Nm>( args ) << '\n';
-}
 
 int main()
 {
@@ -81,7 +70,7 @@ std::cout << "------------------------------------------------------------------
   {
     in_bracket::args_type args { std::make_tuple( 0x1234567812345678, 'v', 1919810.114514 ) };
     const auto isq { index_sequence( args ) };
-    print_tuple<isq.size() - 1>( args );
+    details::print_tuple<isq.size() - 1>( args );
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";
@@ -92,7 +81,7 @@ std::cout << "------------------------------------------------------------------
     helper();
     constexpr aaa_aa::args_type args { std::make_tuple( 0x12345678 ) };
     const auto isq { details::index_sequence( args ) };
-    print_tuple<isq.size() - 1>( args );
+    details::print_tuple<isq.size() - 1>( args );
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
       write( fd, (void*)&args, sizeof( args ) );
@@ -107,12 +96,12 @@ std::cout << "------------------------------------------------------------------
       ::close( fd );
     }
     const auto isq2 { details::index_sequence( args2 ) };
-    print_tuple<isq2.size() - 1>( args2 );
+    details::print_tuple<isq2.size() - 1>( args2 );
 
     helper();
     constexpr in_bracket::args_type args3 { std::make_tuple( 0x1234567812345678, 'x', 3.14 ) };
     const auto isq3 { details::index_sequence( args3 ) };
-    print_tuple<isq3.size() - 1>( args3 );
+    details::print_tuple<isq3.size() - 1>( args3 );
     {
       int fd = open( "tmp.out", O_WRONLY | O_CREAT, 0644 );
       write( fd, (void*)&args3, sizeof( args3 ) );
@@ -127,7 +116,7 @@ std::cout << "------------------------------------------------------------------
       ::close( fd );
     }
     const auto isq4 { details::index_sequence( args4 ) };
-    print_tuple<isq4.size() - 1>( args4 );
+    details::print_tuple<isq4.size() - 1>( args4 );
   }
   // clang-format off
 std::cout << "------------------------------------------------------------------------------------\n";

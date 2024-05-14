@@ -25,6 +25,11 @@ Sth return_sth( const Circle& c, const Point& p )
   return s;
 }
 
+i32 addd( i32 a, i32 b )
+{
+  return a + b;
+}
+
 }
 
 int main()
