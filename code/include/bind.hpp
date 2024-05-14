@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "serialize.hpp"
+
 namespace vastina {
 
 // for more, see this, link : https://www.zhihu.com/question/636120604/answer/3345305152
@@ -60,19 +62,18 @@ class CallTable
 public:
   CallTable() noexcept {}
 
-public:
+private:
   constexpr static auto donothing { []( char*, void* ) {} }; // todo default trans
-  template<typename fn>
-  void bind( const std::string& id,
-             fn func,
-             const std::function<void( char*, void* )> req_tansf = donothing,
-             const std::function<void( char*, void* )> resp_tansf = donothing )
+  template<typename fn, typename ret, typename args>
+  void dobind( const std::string& id,
+               fn func,
+               const std::function<void( char*, args* )> req_tansf,
+               const std::function<void( char*, ret* )> resp_tansf )
   {
-    if ( handlers.contains( id ) ) { // use -std=c++20 or higher standard
-      // do something
-    }
     using ret_type = typename func_traits<fn>::return_type;
     using arg_type = typename func_traits<fn>::args_type;
+    static_assert( std::is_same_v<ret_type, ret> );
+    static_assert( std::is_same_v<arg_type, args> );
     handlers.insert( std::make_pair( id, [func, req_tansf, resp_tansf]( char* requst, char* response ) {
       arg_type requst_args {};
       req_tansf( requst, &requst_args ); // do deserialize here
@@ -80,6 +81,23 @@ public:
       ret_type result = call( func, requst_args );
       resp_tansf( response, &result ); // do serialize here
     } ) );
+  }
+
+public:
+  template<typename fn>
+  void bind( const std::string& id, fn func )
+  {
+    if ( handlers.contains( id ) ) { // use -std=c++20 or higher standard
+      // do something
+    }
+    using ret_type = typename func_traits<fn>::return_type;
+    using arg_type = typename func_traits<fn>::args_type;
+    dobind<fn, ret_type, arg_type>(
+      id,
+      func,
+      []( char* requst_buf, arg_type* args ) { details::single_cpy<arg_type>( args, requst_buf ); },
+      //{ args = reinterpret_cast<arg_type*>(requst_buf); },
+      []( char* response_buf, ret_type* result ) { details::single_cpy<ret_type>( response_buf, result ); } );
   }
 
   void exec( std::string id, char* requst, char* response )

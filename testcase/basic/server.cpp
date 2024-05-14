@@ -1,6 +1,5 @@
 #include "bind.hpp"
 #include "public.hpp"
-#include "serialize.hpp"
 #include "tools.hpp"
 #include <cstdlib>
 #include <ctime>
@@ -36,11 +35,7 @@ int main()
 
   {
     using traits = vastina::func_traits<decltype( &pub::return_sth )>;
-    ct.bind(
-      std::string( "return_sth" ),
-      &pub::return_sth,
-      []( char* reqs, void* args ) { vastina::details::single_cpy<traits::args_type>( args, reqs ); },
-      []( char* resp, void* result ) { vastina::details::single_cpy<traits::return_type>( resp, result ); } );
+    ct.bind( std::string( "return_sth" ), &pub::return_sth );
 
     int count = 0;
     while ( true ) {
@@ -61,11 +56,7 @@ int main()
 
   {
     using traits = vastina::func_traits<decltype( &pub::addd )>;
-    ct.bind(
-      std::string( "addd" ),
-      &pub::addd,
-      []( char* reqs, void* args ) { vastina::details::single_cpy<traits::args_type>( args, reqs ); },
-      []( char* resp, void* result ) { vastina::details::single_cpy<traits::return_type>( resp, result ); } );
+    ct.bind( std::string( "addd" ), &pub::addd );
 
     int count = 0;
     while ( true ) {

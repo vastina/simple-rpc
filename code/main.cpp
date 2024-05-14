@@ -135,15 +135,9 @@ std::cout << "------------------------------------------------------------------
 
   CallTable ct {};
 
-  ct.bind(
-    "abc",
-    &abc,
-    []( char* reqs, void* args ) { details::single_cpy<func_abc::args_type>( args, reqs ); },
-    []( char* resp, void* result ) { details::single_cpy<func_abc::return_type>( resp, result ); } );
+  ct.bind( "abc", &abc );
 
-  // char requst[sizeof(func_abc::args_type)+1] {};
   func_abc::args_type args { std::make_tuple( 3.14f, 11.4514 ) };
-  // details::single_cpy<func_abc::args_type>(requst, (void*)&args);
 
   char response[sizeof( func_abc::return_type ) + 1];
   ct.exec( "abc", (char*)&args, response );
